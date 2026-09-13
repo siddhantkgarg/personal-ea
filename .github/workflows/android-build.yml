@@ -18,6 +18,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -25,6 +28,20 @@ jobs:
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
+
+      - name: Verify APK signature
+        run: apksigner verify --verbose app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Emulator install test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm list packages | grep in.sidd.personal.ea
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
